@@ -3,7 +3,7 @@ function [] = ParseFatUCD(hz)
 %Unless a frequency different from 10Hz:ParseFatUCD(0.05)
 % require two output excel files from the UTS015
 % require the empty excel processor "4PB Fatigue ProcessorforOLTS.xlsx"
-
+% require function sinFitSSE
 
 if nargin<1
     freq=10;%default frequency value 10 Hz
