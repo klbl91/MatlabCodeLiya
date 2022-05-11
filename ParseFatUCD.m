@@ -131,17 +131,17 @@ for m=1:size(fullFileName,2)
             Load=Load(1:(end-DelayPoint));
         end         
 
-        [SineD]=sineFitSSE(Time,Displacement,freq);%sineFitSSE(fittedx,fittedy,frequency,plots?), 0.05 Hz or 10 Hz
+        [SineD]=sineFitSSE(Time,Displacement,freq,0);%sineFitSSE(fittedx,fittedy,frequency,plots?), 0.05 Hz or 10 Hz
         DisplacementPeakValues=[(pi/2-SineD(3))/(2*pi*SineD(4)),SineD(1)+SineD(2),...
             (pi*3/2-SineD(3))/(2*pi*SineD(4)),SineD(1)-SineD(2)];%[DisplacementPeakTime,DisplacementPeak,DisplacementPeakTime2,DisplacementPeak2]
         %[DisplacementPeakValues]=FatPhaseAngle(Time,SineD);%[DisplacementPeakTime,DisplacementPeak,DisplacementPeakTime2,DisplacementPeak2]
-        [SineL]=sineFitSSE(Time,Load,freq);%sineFitSSE,0.05 Hz or 10Hz
+        [SineL]=sineFitSSE(Time,Load,freq,0);%sineFitSSE,0.05 Hz or 10Hz
         LoadPeakValues=[(pi/2-SineL(3))/(2*pi*SineL(4)),SineL(1)+SineL(2),...
             (pi*3/2-SineL(3))/(2*pi*SineL(4)),SineL(1)-SineL(2)];%[LoadmaxTime,Loadmax,LoadminTime,Loadmin]
         %[LoadPeakValues] = FatPhaseAngle(Time,SineL);%[LoadmaxTime,Loadmax,LoadminTime,Loadmin]
         %Phaseangle{i}=360*SineD(4)*abs(LoadPeakValues(1)-DisplacementPeakValues(1));
-        n=round((SineL(3)-SineD(3))/(2*pi),0);
-        Phaseangle{i}=abs(abs(SineL(3)-SineD(3))-n*2*pi)*180/pi;
+        TempPhase=round((SineL(3)-SineD(3))/(2*pi),0);
+        Phaseangle{i}=abs(abs(SineL(3)-SineD(3))-TempPhase*2*pi)*180/pi;
         Displacement2=[Displacement' Displacement(1)]';%connect first and last dot
         
         Load2=[Load' Load(1)]';
@@ -176,9 +176,7 @@ for m=1:size(fullFileName,2)
         lagtime2=abs(Time(idx11)-Time(idx22));
         directphaseangle{i}=360*10*lagtime2;
         p2pstress{i}=p2pstress{i}/1e6;%Pa to MPa
-        if mod(i,floor(n/10))<1e-2
-          waitbar(((m-1)*n+i)/(n*size(fullFileName,2)),hw);
-         end
+
     
     end
     Cycle_Number=Cycle';
@@ -202,8 +200,11 @@ for m=1:size(fullFileName,2)
     Temp_C=TempC';
     avg_angle=avg_phaseangle';
     avg_stiff=avg_E';
-    figure
-    scatter([Cycle_Number{:}],[E_MPa{:}])
+
+    if mod(i,floor(n/10))<1e-2
+     waitbar((m/size(fullFileName,2)),hw);
+    %waitbar(((m-1)*n+i)/(n*size(fullFileName,2)),hw);
+    end
 
     
 %     JJ=table(Cycle_Number,p2p_stress,p2p_strain,E_MPa,Phase_Angle,Phase_Angle2,Directstress,...
