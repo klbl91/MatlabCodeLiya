@@ -116,8 +116,7 @@ for m=1:size(fullFileName,2)
     Rawdata2=Rawdata2(Rawdata2.("Time (sec)")>=DelaySec,:);
     Rawdata2.("Cycle Number")=totcyc;
     
-    %% Fitting each cycle
-
+    %% Fitting each cycle    
     for i=1:n%n
         cycle=cycnumber(i);
         Time=Rawdata2.("Time (sec)")(Rawdata2.("Cycle Number")==cycle);
@@ -140,8 +139,23 @@ for m=1:size(fullFileName,2)
             (pi*3/2-SineL(3))/(2*pi*SineL(4)),SineL(1)-SineL(2)];%[LoadmaxTime,Loadmax,LoadminTime,Loadmin]
         %[LoadPeakValues] = FatPhaseAngle(Time,SineL);%[LoadmaxTime,Loadmax,LoadminTime,Loadmin]
         %Phaseangle{i}=360*SineD(4)*abs(LoadPeakValues(1)-DisplacementPeakValues(1));
-        TempPhase=round((SineL(3)-SineD(3))/(2*pi),0);
-        Phaseangle{i}=abs(abs(SineL(3)-SineD(3))-TempPhase*2*pi)*180/pi;
+        if SineD(2)>0
+            nD=ceil((Time(1)*2*pi*(SineD(4))+SineD(3)-pi/2)/(2*pi));
+            TimeD=(pi/2+nD*2*pi-SineD(3))/(2*pi*SineD(4));
+        else
+            nD=ceil((Time(1)*2*pi*(SineD(4))+SineD(3)+pi/2)/(2*pi));
+            TimeD=(-pi/2+nD*2*pi-SineD(3))/(2*pi*SineD(4));
+        end
+        if SineL(2)>0
+            nL=ceil((Time(1)*2*pi*(SineL(4))+SineL(3)-pi/2)/(2*pi));
+            TimeL=(pi/2+nL*2*pi-SineL(3))/(2*pi*SineL(4));
+        else
+            nL=ceil((Time(1)*2*pi*(SineL(4))+SineL(3)+pi/2)/(2*pi));
+            TimeL=(-pi/2+nL*2*pi-SineL(3))/(2*pi*SineL(4));
+        end
+       
+        %TempPhase=round((SineL(3)-SineD(3))/(2*pi),0);
+        Phaseangle{i}=360*SineD(4)*abs(TimeD-TimeL);
         Displacement2=[Displacement' Displacement(1)]';%connect first and last dot
         
         Load2=[Load' Load(1)]';
@@ -235,7 +249,7 @@ for m=1:size(fullFileName,2)
   nxSR=[Cycle{:}].*[avg_E{:}];
   NfnxSR=Cycle{nxSR==max(nxSR)};
   OutputDataSummary={Specimen,TestMachine,testTime,E50,Nf50,NfnxSR,Nf20,...
-     TargetTemp,TargetFreq,TargetStrain,TempC{1},p2pstrain{1}}';
+     TargetTemp,TargetFreq,TargetStrain,TempC{1},p2pstrain{50}}';
 %% write into 4PB processor for OLTS
   OLTSfilename="4PB Fatigue ProcessorforOLTS.xlsx";
   ProcessedName=strcat(folder,Specimen,"_",num2str(round(TargetStrain*1e6)),"ue_Parsed.xlsx");
