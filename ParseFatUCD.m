@@ -124,11 +124,11 @@ for m=1:size(fullFileName,2)
         Load=Rawdata2.("Load (kN)")(Rawdata2.("Cycle Number")==cycle);
 
         
-        if i>1 && i<n && (cycnumber(i+1)-cycle)>1 %sequence jump
-            Time=Time(1:(end-DelayPoint));
-            Displacement=Displacement(1:(end-DelayPoint));
-            Load=Load(1:(end-DelayPoint));
-        end         
+%         if i>1 && i<n && (cycnumber(i+1)-cycle)>1 %sequence jump
+%             Time=Time(1:(end-DelayPoint));
+%             Displacement=Displacement(1:(end-DelayPoint));
+%             Load=Load(1:(end-DelayPoint));
+%         end         
 
         [SineD]=sineFitSSE(Time,Displacement,freq,0);%sineFitSSE(fittedx,fittedy,frequency,plots?), 0.05 Hz or 10 Hz
         DisplacementPeakValues=[(pi/2-SineD(3))/(2*pi*SineD(4)),SineD(1)+SineD(2),...
@@ -214,7 +214,10 @@ for m=1:size(fullFileName,2)
     Temp_C=TempC';
     avg_angle=avg_phaseangle';
     avg_stiff=avg_E';
-
+    figure
+    scatter([Cycle_Number{:}],[E_MPa{:}])
+    hold on
+    scatter([Cycle_Number{:}],[avg_stiff{:}])
     if mod(i,floor(n/10))<1e-2
      waitbar((m/size(fullFileName,2)),hw);
     %waitbar(((m-1)*n+i)/(n*size(fullFileName,2)),hw);
