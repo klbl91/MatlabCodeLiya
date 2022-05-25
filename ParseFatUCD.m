@@ -1,7 +1,7 @@
 function [] = ParseFatUCD(hz)
 %To run: ParseFatUCD
-%Unless a frequency different from 10Hz:ParseFatUCD(0.05)
-% require two output excel files from the UTS015
+% Unless a frequency different from 10Hz:ParseFatUCD(0.05) FOR 0.05 Hz
+% require the two output excel files from the UTS015
 % require the empty excel processor "4PB Fatigue ProcessorforOLTS.xlsx"
 % require function sinFitSSE
 
