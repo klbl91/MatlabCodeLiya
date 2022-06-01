@@ -63,7 +63,7 @@ for r=1:size(s.textdata,2)
     end
     if r==size(s.textdata,2)&&~contains(s.textdata{1,r},D)
        msg='Error: Could not locate the information: '+convertCharsToStrings(D);
-       r=75;
+       error(msg);
     end
 end
 disp("The specimens that need to be calculated are:")
