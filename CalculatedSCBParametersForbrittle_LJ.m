@@ -16,7 +16,7 @@
 % modification: output the .DB file for OLTS
 
 %% calculation steps need to update for Index=1 and Index=0 following
-%%Index=2 part
+
 clc;
 clear;
 testdatapath=pwd;
@@ -63,7 +63,7 @@ for r=1:size(s.textdata,2)
     end
     if r==size(s.textdata,2)&&~contains(s.textdata{1,r},D)
        msg='Error: Could not locate the information: '+convertCharsToStrings(D);
-       error(msg);
+       r=75;
     end
 end
 disp("The specimens that need to be calculated are:")
