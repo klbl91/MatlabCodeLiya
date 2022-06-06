@@ -103,8 +103,7 @@ for m=1:size(fullFileName,2)
     TargetTemp=str2double(extractAfter(Dimfile{rowTemp,3},","));
     TargetFreq=str2double(extractAfter(Dimfile{rowTemp+1,2},","));
     TargetStrain=str2double(extractAfter(Dimfile{rowTemp+3,6},","))/1e6;
-    n=length(unique(Rawdata2.("Cycle Number")));
-    cycnumber=unique(Rawdata2.("Cycle Number"));
+
 
     %% obtain delayed time from first 10 cycles fitting
     DelayData=Rawdata2(Rawdata2.("Cycle Number")<11,:);
@@ -116,6 +115,9 @@ for m=1:size(fullFileName,2)
     Rawdata2=Rawdata2(Rawdata2.("Time (sec)")>=DelaySec,:);
     Rawdata2.("Cycle Number")=totcyc;
     
+    Rawdata2=Rawdata2(Rawdata2.("Cycle Number")<(totcyc(end)-5),:);%delete last five cycles due to unstable sino reading
+    n=length(unique(Rawdata2.("Cycle Number")));
+    cycnumber=unique(Rawdata2.("Cycle Number"));
     %% Fitting each cycle    
     for i=1:n%n
         cycle=cycnumber(i);
