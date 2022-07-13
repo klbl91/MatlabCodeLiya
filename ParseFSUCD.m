@@ -1,9 +1,11 @@
 function [] = ParseFSUCD()
 %To run: ParseFSUCD
 %Analyze one mixture a time
-% Unless a frequency different from 10Hz:ParseFatUCD(0.05) FOR 0.05 Hz
-% require the two output excel files from the UTS015
-% require the empty excel processor "4PB Fatigue ProcessorforOLTS.xlsx"
+
+% require two types of excel files from UTS018
+%   -runtime files for each frequency
+%   -analyzed csv for each temperature 
+% require the empty excel processor "4PB FS ProcessorforOLTS.xlsx"
 % require function sinFitSSE
 [basename,folder]=uigetfile(('*/*Runtime*.csv'),'select all the input data files for one mixture only(s)','Multiselect','on');%read raw data file
 fullFileName=fullfile(folder,basename);
