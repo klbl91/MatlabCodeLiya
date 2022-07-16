@@ -7,89 +7,76 @@ function [] = ParseFSUCD()
 %   -analyzed csv for each temperature 
 % require the empty excel processor "4PB FS ProcessorforOLTS.xlsx"
 % require function sinFitSSE
-[basename,folder]=uigetfile(('*/*Runtime*.csv'),'select all the input data files for one mixture only(s)','Multiselect','on');%read raw data file
+[basename,folder]=uigetfile(('*/*Runtime*.csv'),'select all the input data files','Multiselect','on');%read raw data file
 fullFileName=fullfile(folder,basename);
-while length(unique(extractBefore(basename,"(FAT")))>1%check if it is a single mixture
- reselmsg=msgbox("You have selected multiple mixtures! Please reselect");
- [basename,folder]=uigetfile(('*/*Runtime*.csv'),'select all the input data files for one mixture only(s)','Multiselect','on');%read raw data file
- fullFileName=fullfile(folder,basename);
- delete (reselmsg);
-end
-MachineID=5;
-if contains(strrep(lower(basename{1})," ",""),"fat6")
-    MachineID=6;
-end
-% if ~iscell(fullFileName)
-%     fullFileName={fullFileName};
-%     basename={basename};
-% end
-%hw = waitbar(0,'Running...');
-frequency={[]};
-p2p_stress={[]};%MPa
-p2p_strain={[]};%mm/mm
-EG={[]};%MPa
-PhaseAngle={[]};
-Temperature={[]};
-% specimen dimensions and testing date from .csv file    
-fn2=fullfile(folder,strcat(extractBefore(basename{1},"_Runtime"),".csv"));
-if ~isfile(fn2)
-    fprintf('Error: \nCannot find this csv file: %s\n',...
-        strcat(extractBefore(basename{1},"_Runtime"),".csv!"))
-    return
-end
-if ~isempty(dir(strcat(folder,extractBefore(basename{1},"_Runtime"),"_*Parsed.xlsx")))
-    fprintf('This file %s has been parsed already!\n',extractBefore(basename{1},"_Runtime"))
-    return
-end
-Dimfile=readcell(fn2);
-if ismissing(Dimfile{11,8})%file format are different for FAT5,FAT6
-    Pos=find(Dimfile{11,3}==',',2,'last');
-    widthstr=extractBetween(Dimfile{11,3},Pos(1)+1,Pos(2)-1);
-    width=str2double([widthstr{1}]);
-    Pos2=find(Dimfile{12,3}==',',2,'last');
-    heightstr=extractBetween(Dimfile{12,3},Pos2(1)+1,Pos2(2)-1);
-    height=str2double([heightstr{1}]);
-else
-    width=Dimfile{11,8};
-    height=Dimfile{12,8};
-end
-monthNames = {'January','February','March','April','May','June','July','August','September','October','November','December'}';
-%rowDate=find(strcmp(Dimfile(:,2),'date'));
-monthnum=find(contains(monthNames,Dimfile{30,5}));
-testTime=datetime(str2double(Dimfile{30,7}),monthnum,str2double(Dimfile{30,6}),'F','MM/dd/uuuu');
+MIXID=regexp(basename,'.*\(FAT', 'match');
+MIXID=unique([MIXID{:}]);%for multiple mixtures analysis
+%  while length(unique(extractBefore(basename,"(FAT")))>1%check if it is a single mixture
+%   reselmsg=msgbox("You have selected multiple mixtures! Please reselect");
+%   [basename,folder]=uigetfile(('*/*Runtime*.csv'),'select all the input data files for one mixture only(s)','Multiselect','on');%read raw data file
+%   fullFileName=fullfile(folder,basename);
+%   delete (reselmsg);
+%  end
+for ID=1:size(MIXID,2)
+    basename2=basename(contains(basename,MIXID{ID}));
+    fullFileName2=fullfile(folder,basename2);
+    MachineID=5;
+    if contains(strrep(lower(basename2{1})," ",""),"fat6")
+        MachineID=6;
+    end
+    % if ~iscell(fullFileName)
+    %     fullFileName={fullFileName};
+    %     basename={basename};
+    % end
+    %hw = waitbar(0,'Running...');
+    frequency={[]};
+    p2p_stress={[]};%MPa
+    p2p_strain={[]};%mm/mm
+    EG={[]};%MPa
+    PhaseAngle={[]};
+    Temperature={[]};
+    % specimen dimensions and testing date from .csv file    
+    fn2=fullfile(folder,strcat(extractBefore(basename2{1},"_Runtime"),".csv"));
+    if ~isfile(fn2)
+        fprintf('Error: \nCannot find this csv file: %s\n',...
+            strcat(extractBefore(basename2{1},"_Runtime"),".csv!"))
+        continue
+    end
+    if ~isempty(dir(strcat(folder,regexp(basename2{1},".*\(FAT \d)","match"),"*_Parsed.xlsx")))
+       fprintf('This file %s has been parsed already!\n',extractBefore(basename2{1},"_Runtime"))
+       continue
+    end
+    Dimfile=readcell(fn2);
+    if ismissing(Dimfile{11,8})%file format are different for FAT5,FAT6
+        Pos=find(Dimfile{11,3}==',',2,'last');
+        widthstr=extractBetween(Dimfile{11,3},Pos(1)+1,Pos(2)-1);
+        width=str2double([widthstr{1}]);
+        Pos2=find(Dimfile{12,3}==',',2,'last');
+        heightstr=extractBetween(Dimfile{12,3},Pos2(1)+1,Pos2(2)-1);
+        height=str2double([heightstr{1}]);
+    else
+        width=Dimfile{11,8};
+        height=Dimfile{12,8};
+    end
+    monthNames = {'January','February','March','April','May','June','July','August','September','October','November','December'}';
+    %rowDate=find(strcmp(Dimfile(:,2),'date'));
+    if ismissing(Dimfile{30,7})
+        monthnum=find(contains(monthNames,extractBefore(Dimfile{30,3},' ')));
+        testTime=datetime(Dimfile{30,4},monthnum,str2double(extractAfter(Dimfile{30,3},' ')),'F','MM/dd/uuuu');
+    else
+        monthnum=find(contains(monthNames,Dimfile{30,5}));
+        testTime=datetime(str2double(extractBefore(Dimfile{30,7},",")),monthnum,...
+            str2double(extractBefore(Dimfile{30,6},",")),'F','MM/dd/uuuu');
+    end
 %TargetStrain=str2double(extractAfter(Dimfile{rowTemp-1,3},","))*2/1e6;
-for m=1:size(fullFileName,2)%different temperatures and frequencies for one mixture
-    %% fit to sinusoidal function a+c*sin(wt+d)
-    Cycle={[]};
-    MaximumLoad={[]};
-    MinimumLoad={{}};
-    Maxload={[]};%direct measurement of peak-to-peak
-    Minload={[]};
-    MaximumLVDT={[]};
-    MinimumLVDT={[]};
-    Maxlvdt={[]};%direct peak-to-peak
-    Minlvdt={[]};
-    p2pstress={[]};
-    p2pstrain={[]};
-    direct_stress={[]};
-    direct_strain={[]};
-    flexuralstiff={[]};
-    directstiff={[]};%from direct peak-to-peak
-    Phaseangle={[]};%from fitting
-    Phaseangle2={[]};%hysteresis loop
-    %Phaseangle3={[]};% hysteresis loop of fitted curve
-    directphaseangle={[]};
-    TempC={[]};
-    avg_phaseangle={[]};
-    avg_E={[]};
-    fn=fullFileName{m};
-    Specimen=regexp(basename{m},".*\(FAT \d)","match");
+for m=1:size(basename2,2)%different temperatures and frequencies for one mixture
+    %% fit to sinusoidal function a+c*sin(wt+d)    
+    fn=fullFileName2{m};
+    Specimen=regexp(basename2{m},".*\(FAT \d)","match");
     %TargetTemp=regexp(Specimen, '(\d+)C', 'tokens');
     %TargetTemp=str2num(TargetTemp{:});
-    TargetFreq=str2double(regexp(basename{m},'(?<=\()[^)]*(?=\)*Hz)', 'match'));
-
-    Rawdata=readcell(fn);
-    
+    TargetFreq=str2double(regexp(basename2{m},'(?<=\()[^)]*(?=\)*Hz)', 'match'));
+    Rawdata=readcell(fn);    
     Variablenames=["Cycle Number","Time (sec)","Acurator (mm)","Load (kN)",...
         "Rear  LVDT (mm)","Core Temperature (°C)"];
 
@@ -113,19 +100,42 @@ for m=1:size(fullFileName,2)%different temperatures and frequencies for one mixt
     cycnumber=unique(Rawdata2.("Cycle Number"));
     frequency{m}=(Rawdata2.("Cycle Number")(end)-Rawdata2.("Cycle Number")(1))/...
         (Rawdata2.("Time (sec)")(end)-Rawdata2.("Time (sec)")(1));    %obtain the frequency and temperature information
-    Temperature{m}=Rawdata2.("Core Temperature (°C)")(1);
+    %Temperature{m}=Rawdata2.("Core Temperature (°C)")(1);
     %% Fitting each cycle    
     for i=1:n%n
+        Cycle={[]};
+        MaximumLoad={[]};
+        MinimumLoad={{}};
+        Maxload={[]};%direct measurement of peak-to-peak
+        Minload={[]};
+        MaximumLVDT={[]};
+        MinimumLVDT={[]};
+        Maxlvdt={[]};%direct peak-to-peak
+        Minlvdt={[]};
+        p2pstress={[]};
+        p2pstrain={[]};
+        direct_stress={[]};
+        direct_strain={[]};
+        flexuralstiff={[]};
+        directstiff={[]};%from direct peak-to-peak
+        Phaseangle={[]};%from fitting
+        Phaseangle2={[]};%hysteresis loop
+        %Phaseangle3={[]};% hysteresis loop of fitted curve
+        directphaseangle={[]};
+        TempC={[]};
+        avg_phaseangle={[]};
+        avg_E={[]};
         cycle=cycnumber(i);
         Time=Rawdata2.("Time (sec)")(Rawdata2.("Cycle Number")==cycle);
         Displacement=Rawdata2.("Rear  LVDT (mm)")(Rawdata2.("Cycle Number")==cycle);
         Load=Rawdata2.("Load (kN)")(Rawdata2.("Cycle Number")==cycle);     
-        
-        [SineD]=sineFitSSE(Time,Displacement,TargetFreq);%sineFitSSE(fittedx,fittedy,frequency,plots?), 0.05 Hz or 10 Hz
+        TempCset=Rawdata2.("Core Temperature (°C)")(Rawdata2.("Cycle Number")==cycle);
+        TempC{i}=TempCset(1);
+        [SineD]=sineFitSSE(Time,Displacement,TargetFreq,0);%sineFitSSE(fittedx,fittedy,frequency,plots?), 0.05 Hz or 10 Hz
         DisplacementPeakValues=[(pi/2-SineD(3))/(2*pi*SineD(4)),SineD(1)+SineD(2),...
             (pi*3/2-SineD(3))/(2*pi*SineD(4)),SineD(1)-SineD(2)];%[DisplacementPeakTime,DisplacementPeak,DisplacementPeakTime2,DisplacementPeak2]
         %[DisplacementPeakValues]=FatPhaseAngle(Time,SineD);%[DisplacementPeakTime,DisplacementPeak,DisplacementPeakTime2,DisplacementPeak2]
-        [SineL]=sineFitSSE(Time,Load,TargetFreq);%sineFitSSE,0.05 Hz or 10Hz
+        [SineL]=sineFitSSE(Time,Load,TargetFreq,0);%sineFitSSE,0.05 Hz or 10Hz
         LoadPeakValues=[(pi/2-SineL(3))/(2*pi*SineL(4)),SineL(1)+SineL(2),...
             (pi*3/2-SineL(3))/(2*pi*SineL(4)),SineL(1)-SineL(2)];%[LoadmaxTime,Loadmax,LoadminTime,Loadmin]
         %[LoadPeakValues] = FatPhaseAngle(Time,SineL);%[LoadmaxTime,Loadmax,LoadminTime,Loadmin]
@@ -187,6 +197,7 @@ for m=1:size(fullFileName,2)%different temperatures and frequencies for one mixt
     p2p_strain{m}=mean(cell2mat(avg_p2pstrain));%mm/mm
     EG{m}=mean(cell2mat(avg_E));%MPa
     PhaseAngle{m}=mean(cell2mat(avg_phaseangle));
+    Temperature{m}=mean(cell2mat(TempC));   
 
 end
 
@@ -207,4 +218,6 @@ copyfile(OLTSfilename,ProcessedName)
 JJ=table(Frequency,P2PStress,P2PStrain,E_MPa,Phase_Angle,Temp_C);
 writetable(JJ,ProcessedName,'Sheet','Data.Clean','Range','B2','WriteVariableNames',false)
 writecell(OutputDataSummary,ProcessedName,'Sheet','Data.Summary','Range','B2');
-close all
+fprintf('Parsing finished for %s! \n',...
+        Specimen{1})
+end
