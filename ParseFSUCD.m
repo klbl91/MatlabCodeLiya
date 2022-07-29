@@ -1,6 +1,6 @@
 function [] = ParseFSUCD()
 %To run: ParseFSUCD
-%Analyze one mixture a time
+%
 
 % require two types of excel files from UTS018
 %   -runtime files for each frequency
